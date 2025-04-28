@@ -15,16 +15,13 @@ from copy import deepcopy as dc
 #region class definitions
 class MainWindow(Ui_Form, qtw.QWidget):
     def __init__(self):
-        """
-        This program illustrates the use of the graphics view framework.  The QGraphicsView widget is created in
-        designer.  The QGraphicsView displays a QGraphicsScene.  A QGraphicsScene contains QGraphicsItem objects.
-        """
         super().__init__()
         self.setupUi(self)
         #region UserInterface stuff here
 
         #create a four bar linkage controller object and pass widgets for interaction
-        widgets = [self.gv_Main, self.nud_InputAngle, self.lbl_OutputAngle_Val, self.nud_Link1Length, self.nud_Link3Length, self.spnd_Zoom]
+        widgets = [self.gv_Main, self.nud_InputAngle, self.lbl_OutputAngle_Val,
+                  self.nud_Link1Length, self.nud_Link3Length, self.spnd_Zoom]
         self.FBL_C=FourBarLinkage_Controller(widgets)
 
         #set up graphics view, add a scene and build pens and brushes
@@ -45,6 +42,36 @@ class MainWindow(Ui_Form, qtw.QWidget):
         self.nud_Link1Length.setValue(self.FBL_C.FBL_M.InputLink.length)
         self.nud_Link3Length.setValue(self.FBL_C.FBL_M.OutputLink.length)
 
+        # Add min/max angle controls
+        self.lbl_MinAngle = qtw.QLabel("Min Angle:")
+        self.nud_MinAngle = qtw.QDoubleSpinBox()
+        self.nud_MinAngle.setRange(0, 360)
+        self.nud_MinAngle.setValue(0)
+        self.lbl_MaxAngle = qtw.QLabel("Max Angle:")
+        self.nud_MaxAngle = qtw.QDoubleSpinBox()
+        self.nud_MaxAngle.setRange(0, 360)
+        self.nud_MaxAngle.setValue(360)
+
+        # Enforce min <= max
+        self.nud_MinAngle.valueChanged.connect(lambda v: self.nud_MaxAngle.setMinimum(v))
+        self.nud_MaxAngle.valueChanged.connect(lambda v: self.nud_MinAngle.setMaximum(v))
+
+        # Create layout for angle limits
+        angle_limits_layout = qtw.QHBoxLayout()
+        angle_limits_layout.addWidget(self.lbl_MinAngle)
+        angle_limits_layout.addWidget(self.nud_MinAngle)
+        angle_limits_layout.addWidget(self.lbl_MaxAngle)
+        angle_limits_layout.addWidget(self.nud_MaxAngle)
+
+        # Insert the layout before the graphics view
+        self.verticalLayout.insertLayout(2, angle_limits_layout)
+
+        # Connect signals
+        self.nud_MinAngle.valueChanged.connect(self.updateInputAngleRange)
+        self.nud_MaxAngle.valueChanged.connect(self.updateInputAngleRange)
+        self.nud_MinAngle.valueChanged.connect(lambda v: self.FBL_C.set_min_angle(v))
+        self.nud_MaxAngle.valueChanged.connect(lambda v: self.FBL_C.set_max_angle(v))
+
         #signals/slots
         self.spnd_Zoom.valueChanged.connect(self.setZoom)
         self.nud_Link1Length.valueChanged.connect(self.setInputLinkLength)
@@ -52,6 +79,11 @@ class MainWindow(Ui_Form, qtw.QWidget):
         self.FBL_C.FBL_V.scene.installEventFilter(self)
         self.mouseDown = False
         self.show()
+
+    def updateInputAngleRange(self):
+        min_angle = self.nud_MinAngle.value()
+        max_angle = self.nud_MaxAngle.value()
+        self.nud_InputAngle.setRange(min_angle, max_angle)
 
     def setInputLinkLength(self):
         self.FBL_C.setInputLinkLength()
@@ -68,7 +100,6 @@ class MainWindow(Ui_Form, qtw.QWidget):
         self.setWindowTitle(str(a0.x())+','+ str(a0.y())+name)
 
     def eventFilter(self, obj, event):
-        # I set up an event filter to track mouse position and illustrate difference between scene and screen coords.
         if obj == self.FBL_C.FBL_V.scene:
             et=event.type()
             if event.type() == qtc.QEvent.GraphicsSceneMouseMove:
@@ -91,7 +122,6 @@ class MainWindow(Ui_Form, qtw.QWidget):
                     self.mouseDown = True
             if event.type() == qtc.QEvent.GraphicsSceneMouseRelease:
                 self.mouseDown = False
-        # pass the event along to the parent widget if there is one.
         return super(MainWindow, self).eventFilter(obj, event)
 
     def setZoom(self):
@@ -105,4 +135,3 @@ if __name__ == '__main__':
     mw = MainWindow()
     mw.setWindowTitle('Four Bar Linkage')
     sys.exit(app.exec())
-#endregion
