@@ -966,12 +966,19 @@ class FourBarLinkage_View():
 #region controller
 class FourBarLinkage_Controller():
     def __init__(self, widgets):
-        #widgets = [self.gv_Main, self.nud_InputAngle, self.lbl_OutputAngle_Val, self.nud_Link1Length, self.nud_Link3Length, self.spnd_Zoom]
-        self.widgets=widgets
+        self.widgets = widgets
         self.gv_Main, self.nud_InputAngle, self.lbl_OutputAngle_Val, self.nud_Link1Length, self.nud_Link3Length, self.spnd_Zoom = widgets
 
         self.FBL_M = FourBarLinkage_Model()
         self.FBL_V = FourBarLinkage_View(self.gv_Main)
+        self.min_angle = 0.0  # Default minimum angle
+        self.max_angle = 360.0  # Default maximum angle
+
+    def set_min_angle(self, value):
+        self.min_angle = value
+
+    def set_max_angle(self, value):
+        self.max_angle = value
 
     def setupGraphics(self):
         self.FBL_V.setupGraphics()
@@ -990,11 +997,37 @@ class FourBarLinkage_Controller():
         self.FBL_V.scene.update()
 
     def moveLinkage(self, scenePos):
-        self.FBL_M.moveLinkage(scenePos)
+        # Get input link pivot point and length
+        pivot = self.FBL_M.InputLink.stPt
+        L = self.FBL_M.InputLink.length
+
+        # Calculate desired angle from mouse position
+        dx = scenePos.x() - pivot.x()
+        dy = pivot.y() - scenePos.y()  # Invert y-axis for proper angle calculation
+        desired_angle_rad = math.atan2(dy, dx)
+        desired_angle_deg = math.degrees(desired_angle_rad) % 360
+
+        # Clamp angle to min/max values
+        clamped_deg = max(self.min_angle, min(desired_angle_deg, self.max_angle))
+        clamped_rad = math.radians(clamped_deg)
+
+        # Calculate new position based on clamped angle
+        new_x = pivot.x() + L * math.cos(clamped_rad)
+        new_y = pivot.y() - L * math.sin(clamped_rad)
+        adjusted_pos = qtc.QPointF(new_x, new_y)
+
+        # Update model with adjusted position
+        self.FBL_M.moveLinkage(adjusted_pos)
         self.FBL_V.scene.update()
         self.nud_InputAngle.setValue(self.FBL_M.InputLink.AngleDeg())
         self.lbl_OutputAngle_Val.setText("{:0.2f}".format(self.FBL_M.OutputLink.AngleDeg()))
-#endregion
+
+
+# endregion
+
+# region view
+# ... (Keep all existing view classes unchanged) ...
+# endregion
 #endregion
 
 if __name__ ==  "__main__":
