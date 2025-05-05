@@ -111,3 +111,4 @@ class Ui_Form(object):
         self.lbl_OutputAngle_Val.setText(_translate("Form", "0.00"))
         self.lbl_Link1Length.setText(_translate("Form", "Link 1 Length"))
         self.label_2.setText(_translate("Form", "Link 3 Length"))
+
