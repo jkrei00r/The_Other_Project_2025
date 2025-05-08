@@ -9,9 +9,7 @@ import numpy as np
 import scipy as sp
 from scipy import optimize
 from copy import deepcopy as dc
-#endregion
 
-#region class definitions
 class MainWindow(Ui_Form, qtw.QWidget):
     def __init__(self):
         super().__init__()
@@ -126,11 +124,13 @@ class MainWindow(Ui_Form, qtw.QWidget):
     def setZoom(self):
         self.gv_Main.resetTransform()
         self.gv_Main.scale(self.spnd_Zoom.value(), self.spnd_Zoom.value())
-#endregion
 
-#region function calls
 if __name__ == '__main__':
-    app = qtw.QApplication(sys.argv)
-    mw = MainWindow()
-    mw.setWindowTitle('Four Bar Linkage')
-    sys.exit(app.exec()) 
+    try:
+        app = qtw.QApplication(sys.argv)
+        mw = MainWindow()
+        mw.setWindowTitle('Four Bar Linkage')
+        sys.exit(app.exec())
+    except Exception as e:
+        print(f"Application crashed with error: {e}")
+        raise
